@@ -94,7 +94,7 @@ def partitioned_box(n=200, split=0.5, p=[0.5, 0.5]):
 
     # Initial conditions
     M2 = []
-    M1 = N.copy().tolist()[0:int(len(N) * split)] # selects percentage of particles
+    M1 = N[0:int(len(N) * split)].tolist() # selects percentage of particles
     M2 = [x for x in N if x not in M1]
     
     N1 = [] # counters
