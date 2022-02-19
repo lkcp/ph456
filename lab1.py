@@ -4,7 +4,7 @@ import seaborn as sns
 import pandas as pd
 from numpy.random import Generator, PCG64
 
-# Lab 1 on random numbers, random walks, partitioned box
+# Lab 1 on random numbers, random walks, partitioned box, basic monte-carlo
 
 
 # Task 1 - uniformity and sequential correlation of random generators
@@ -57,7 +57,7 @@ ax[0].legend()
 ax[1].legend()
 plt.show()
 
-# Graphical
+# Graphical sequential correlation
 increment = np.array([1, 10])
 
 for l in range(len(increment)):
@@ -93,7 +93,6 @@ def partitioned_box(n=200, split=0.5, p=[0.5, 0.5]):
     t = np.linspace(0, 4000, 4000)
 
     # Initial conditions
-    M2 = []
     M1 = N[0:int(len(N) * split)].tolist() # selects percentage of particles
     M2 = [x for x in N if x not in M1]
     
