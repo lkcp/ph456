@@ -1,4 +1,6 @@
 import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 
 def integrate(func, limits, n=100):
@@ -87,6 +89,30 @@ def f5(x):
     return 2 * np.exp(-(x**2))
 
 
+
+
+def metropolis_sample(func, x_initial, delta, n=1000):
+
+    x = np.ones(n) * x_initial
+    print(x)
+    for i in range(n-1):
+        delta = np.random.uniform(low=-delta, high=delta)
+        x_trial = delta + x_initial
+        w = func(x_trial)/func(x_initial)
+        
+        if w < 1:
+            r = np.random.uniform(low=0, high=1)
+            if r > w:
+                x[i+1] = x_initial
+            else:
+                x[i+1] = x_trial
+        else:
+            x[i+1] = x_trial
+    
+    return x
+
+
+
 def f6(x):
     return 1.5 * np.sin(x)
 
@@ -95,11 +121,19 @@ def f5_weight(x):
     return np.exp(-abs(x))
 
 
-def f6_weight(x):
-    return 
 
 
-i5a = integrate(f5, [[-10, 10]], n=10000)
+i5a = metropolis_sample(f5_weight, 0, -10)
 print('5a: ', i5a)
-i6a = integrate(f6, [[0, np.pi]], n=10000)
-print('6a: ', i6a)
+x = np.linspace(-10, 10, 1000)
+func = np.exp(-abs(x))
+fig, ax = plt.subplots()
+ax.plot(x, func, label='func')
+#ax.hist(i5a)
+ax.legend()
+plt.show()
+print(np.sum(i5a))
+
+
+#i6a = integrate(f6, [[0, np.pi]], n=10000)
+#print('6a: ', i6a)
