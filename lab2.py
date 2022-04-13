@@ -5,10 +5,12 @@ import matplotlib.pyplot as plt
 
 def integrate(func, limits, n=100):
     '''
-    func: the function to be integrated
-    limits: list of limits for each variable in the form [[x1, x2], ... , [z1, z2]]
-    n: step count, default n=100
-    returns: integration using Monte-Carlo sampling, variance
+    Args:
+        func: the function to be integrated
+        limits: list of limits for each variable in the form [[x1, x2], ... , [z1, z2]]
+        n: step count, default n=100
+    
+    Returns: integration using Monte-Carlo sampling, variance
     '''
     n_params = len(limits) # variable number of params
     xi = [np.random.uniform(low=limit[0], high=limit[1], size=(n,)) for limit in limits] # generates a list of lists, xi for each param
@@ -20,7 +22,6 @@ def integrate(func, limits, n=100):
 
     f = func(*xi) # passes list of xis into func
     f_squared = func(*xi) ** 2 # f**2 for variance
-    
 
     return avg_width * np.mean(f), (np.mean(f_squared) - np.mean(f) ** 2) / n 
 
@@ -64,45 +65,57 @@ def dim9(ax, ay, az, ba, by, bz, ca, cy, cz):
     return 1/abs(np.dot(a + b, c.T))
 
 
+def metropolis(f, p, A, x_initial, delta, n=1000):
+    """
+    Metropolis Integration.
+    Args:
+        f: integrand function
+        p: sampling function
+        x_initial: initial random walk position
+        delta: sampling interval [-delta, delta]
+        n: number of steps
+
+    Returns: definite integral solution
+    """
+
+    x = np.ones(n) * x_initial
+    for i in range(n-1):
+        d = np.random.uniform(low=-delta, high=delta)
+        x_trial = x[i] + d
+        w = p(x_trial) / p(x_initial)
+        if w >= 1:
+            x[i+1] = x_trial
+        else:
+            r = np.random.uniform(low=0, high=1)
+            if r <= w:
+                x[i+1] = x_trial
+
+    start = int(n * 0.5)
+    I = np.mean((f(x) / p(x))[start::])
+
+    return I
+
+
 def f5(x):
     return 2 * np.exp(-(x**2))
 
 
-def metropolis(func, sample_func, x_initial, delta, n=1000):
-
-    x = np.zeros(n) 
-    deltas = []
-    for i in range(n-1):
-        d = np.random.uniform(low=-delta, high=delta)
-        deltas.append(d)
-        x_trial = x_initial + d
-        w = sample_func(x_trial)/sample_func(x_initial)
-        if w < 1:
-            r = np.random.uniform(low=0, high=1)
-            if r > w:
-                x[i+1] = x_initial
-            else:
-                x[i+1] = x_trial
-        else:
-            x[i+1] = x_trial
-  
-    f = np.array([func(i) for i in x])
-    w = np.array([sample_func(i) for i in x])
-
-    return np.mean(f)/np.mean(w), x
+def f5_weight(x):
+    A = 1 / (2 - 2 * np.exp(-10))
+    return np.exp(-abs(x)) * A
 
 
 def f6(x):
-    A = 2 * np.pi / 3
-    return A * 1.5 * np.sin(x)
+    return 1.5 * np.sin(x)
 
 
-def f5_weight(x):
-    A = 1 / (-2 * np.exp(-10))
-    return A * np.exp(-abs(x))
+def f6_weight(x):
+    A = 3 / (2 * np.pi)
+    return A * 4 * x * (np.pi - x) / np.pi**2
 
 
-# results
+# Results
+# Task 2
 i2a, i2astd = integrate(f1, [[0, 1]], 10000)
 print('2a: {:.3f} +- {:.3f}'.format(i2a, i2astd))
 i2b, i2bstd = integrate(f2, [[0, 1]], 10000)
@@ -111,28 +124,66 @@ i2c, i2cstd = integrate(f3, [[-2, 2]], 10000)
 print('2c: {:.5f} +- {:.5f}'.format(i2c, i2cstd))
 i2d, i2dstd = integrate(f4, [[0, 1], [0, 1]], 10000)
 print('2d: {:.5f} +- {:.5f}'.format(i2d, i2dstd))
+
+# Task 3
 i3a, i3astd = integrate(n_sphere, [[-2, 2], [-2, 2], [-2, 2]], n=10000)
 print('3-sphere: {:.5f} +- {:.5f}'.format(i3a, i3astd))
 i3b, i3bstd = integrate(n_sphere, [[-2, 2], [-2, 2], [-2, 2], [-2, 2], [-2, 2]], n=10000)
 print('3-sphere: {:.5f} +- {:.5f}'.format(i3b, i3bstd))
 
+# Task 4
 n = 9
 limits = [[0, 1] for _ in range(9)]
 i4, i4std = integrate(dim9, limits, n=10000)
 print('4: {:.5f} +- {:.5f}'.format(i4, i4std))
 
-i5a, samples = metropolis(f5, f5_weight, 0, 10)
-print('5a: ', i5a)
+# Task 5a
+n=100000
+A = 1 / (2 - 2 * np.exp(-10))
 
-x = np.linspace(-10, 10, 1000)
+'''
+deltas = np.linspace(0, 5, 10000)
+good_delta = []
+for delta in deltas:
+    i5a, delta = metropolis(f5, f5_weight, A, 0, delta, n)
+    if delta[0] > 49.5 and delta[0] < 50.5:
+        good_delta.append(delta)
+
+print(good_delta)
+'''
+
+i5a = metropolis(f5, f5_weight, A, 0, 2.99, n)
+print('5a: {}, n={}'.format(i5a, n))
+x = np.linspace(-10, 10, n)
 func = 2 * np.exp(-(x**2)) 
-
+'''
 fig, ax = plt.subplots()
 ax.plot(x, func, label='func')
-ax.hist(samples, bins=10)
+ax.hist(samples, bins=len(samples))
 ax.legend()
 plt.show()
+'''
 
+# Task 5b
+A = 3 / (2 * np.pi)
+
+i5b = metropolis(f6, f6_weight, A, 1.5, np.pi, n)
+print('5b: {}, n={}'.format(i5b, n))
+x = np.linspace(0, np.pi, n)
+func = 1.5 * np.sin(x)
+
+
+
+
+'''
+fig, ax = plt.subplots()
+ax.plot(x, func, label='func')
+ax.hist(samples, bins=len(samples))
+ax.legend()
+plt.show()
+'''
+
+# Task 6
 ns = [100, 1000, 10000, 100000, 1000000, 10000000, 100000000]
 for n in ns:
     val = 3.544907701811032
